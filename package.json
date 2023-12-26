@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Backend of a employee shift schedular application",
   "main": "src/index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -26,7 +27,12 @@
   },
   "homepage": "https://github.com/s4k1b/employee-shift-schedular#readme",
   "dependencies": {
-    "express": "^4.18.2"
+    "chalk": "^5.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "mongoose": "^8.0.3"
   },
   "devDependencies": {
     "eslint": "^8.56.0",
