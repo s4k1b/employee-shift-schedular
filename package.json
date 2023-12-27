@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/s4k1b/employee-shift-schedular#readme",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "chalk": "^5.3.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
