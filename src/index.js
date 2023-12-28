@@ -26,6 +26,11 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use('/auth', authRoutes)
 
+// custom error handling
+app.use((err, req, res, next) => {
+  res.status(err.statusCode || 500).json({ msg: err.message })
+})
+
 app.listen(port, () => {
   console.log(chalk.green('Server is listening on port: '), chalk.green(port))
 })

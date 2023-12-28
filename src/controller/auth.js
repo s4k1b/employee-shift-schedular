@@ -1,13 +1,14 @@
 import { checkSchema, validationResult } from 'express-validator'
 import { User } from '../model/user.js'
-import { processRequestBodyValidationErrors, processDatabaseActionErrors } from '../utilities/error-process.js'
 
 const registerSchema = {
   name: {
     notEmpty: true
   },
   phone: {
-    options: ['any', { strictMode: true }]
+    isMobilePhone: {
+      options: ['any', { strictMode: true }]
+    }
   },
   email: {
     notEmpty: true,
@@ -23,11 +24,33 @@ const registerSchema = {
 }
 
 function bodyValidation (req, resp, next) {
-  const result = validationResult(req)
-  if (!result.isEmpty()) {
-    resp.status(422).send({ errors: processRequestBodyValidationErrors(result.errors) })
-  } else {
-    return next()
+  try {
+    validationResult(req).throw()
+    next()
+  } catch (e) {
+    next(e)
+  }
+}
+
+async function emailExistsValidation (req, resp, next) {
+  try {
+    const user = await User.findOne({ email: req.body.email })
+    if (req.url === '/register') {
+      if (user) {
+        next(new Error('Email already exists'))
+      } else next()
+    } else if (req.url === '/login') {
+      if (user) {
+        resp.locals.user = user
+        next()
+      } else {
+        const error = new Error('Email not registered')
+        error.statusCode = 404
+        next(error)
+      }
+    }
+  } catch (e) {
+    next(e)
   }
 }
 
@@ -36,12 +59,14 @@ export const registerControllers = [
 
   bodyValidation,
 
-  async function register (req, resp) {
+  emailExistsValidation,
+
+  async function register (req, resp, next) {
     try {
       await User.create(req.body)
       resp.status(200).send({ msg: `Registration Successful for user: ${req.body.username}` })
     } catch (e) {
-      resp.status(422).send({ errors: [processDatabaseActionErrors(e)] })
+      next(e)
     }
   }
 ]
@@ -64,17 +89,22 @@ export const loginControllers = [
 
   bodyValidation,
 
-  async function login (req, resp) {
-    const { email, password } = req.body || {}
+  emailExistsValidation,
+
+  async function login (req, resp, next) {
+    const { password } = req.body || {}
+    const { user } = resp.locals
     try {
-      const user = await User.findOne({ email })
       if (await user.comparePassword(password)) {
         resp.status(200).send({ msg: 'Logged in successfully' })
       } else {
-        resp.status(401).send({ errors: ['Incorrect email or password'] })
+        const error = new Error('Incorrect email or password')
+        error.statusCode = 401
+        error.name = 'Unauthorized'
+        next(error)
       }
     } catch (e) {
-      resp.status(500).send({ errors: [`User with ${email} not found.`] })
+      next(e)
     }
   }
 
