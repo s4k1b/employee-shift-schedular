@@ -1,5 +1,6 @@
 import { checkSchema, validationResult } from 'express-validator'
 import { User } from '../model/user.js'
+import jwt from 'jsonwebtoken'
 
 const registerSchema = {
   name: {
@@ -84,6 +85,32 @@ const loginSchema = {
   }
 }
 
+function generateJWT (user) {
+  try {
+    return jwt.sign(user, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES })
+  } catch (e) {
+    throw new Error('Error generating JWT: ' + e)
+  }
+}
+function onPasswordMatch (resp, user) {
+  const jwtToken = generateJWT(user)
+  // set the cookie in header
+  resp.cookie('access_token', jwtToken, {
+    domain: 'localhost',
+    sameSite: 'Strict',
+    expires: new Date(Date.now() + 10 * 60 * 1000), // expires in 10 minutes
+    httpOnly: true
+  })
+  resp.status(200).send({ msg: 'Logged in successfully' })
+}
+
+function onPasswordMissMatch (next) {
+  const error = new Error('Incorrect email or password')
+  error.statusCode = 401
+  error.name = 'Unauthorized'
+  next(error)
+}
+
 export const loginControllers = [
   checkSchema(loginSchema),
 
@@ -96,13 +123,9 @@ export const loginControllers = [
     const { user } = resp.locals
     try {
       if (await user.comparePassword(password)) {
-        resp.append('Set-Cookie', 'jwt=abcd; Domain=localhost; HttpOnly; SameSite: Strict')
-        resp.status(200).send({ msg: 'Logged in successfully' })
+        onPasswordMatch(resp, user.toObject())
       } else {
-        const error = new Error('Incorrect email or password')
-        error.statusCode = 401
-        error.name = 'Unauthorized'
-        next(error)
+        onPasswordMissMatch(next)
       }
     } catch (e) {
       next(e)
