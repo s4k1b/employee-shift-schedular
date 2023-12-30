@@ -64,7 +64,7 @@ export const registerControllers = [
   async function register (req, resp, next) {
     try {
       await User.create(req.body)
-      resp.status(200).send({ msg: `Registration Successful for user: ${req.body.username}` })
+      resp.status(200).send({ msg: 'Registration Successful' })
     } catch (e) {
       next(e)
     }
@@ -96,6 +96,7 @@ export const loginControllers = [
     const { user } = resp.locals
     try {
       if (await user.comparePassword(password)) {
+        resp.append('Set-Cookie', 'jwt=abcd; Domain=localhost; HttpOnly; SameSite: Strict')
         resp.status(200).send({ msg: 'Logged in successfully' })
       } else {
         const error = new Error('Incorrect email or password')
