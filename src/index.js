@@ -1,9 +1,13 @@
 import express from 'express'
 import chalk from 'chalk'
 import cors from 'cors'
-import authRoutes from './route/auth.js'
 import { connect } from './db.js'
 import { config } from 'dotenv'
+import cookieParser from 'cookie-parser'
+
+import authMiddleware from './middlewares/auth.js'
+import authRoutes from './route/auth.js'
+import userRoutes from './route/user.js'
 
 // make .env variables available
 config()
@@ -24,7 +28,15 @@ app.use(express.json())
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }))
 
+// parse request cookies
+app.use(cookieParser())
+
+// auth middleware
+app.use(authMiddleware)
+
+// routes
 app.use('/auth', authRoutes)
+app.use('/user', userRoutes)
 
 // custom error handling
 app.use((err, req, res, next) => {

@@ -133,3 +133,12 @@ export const loginControllers = [
   }
 
 ]
+
+// -------------------------------------------------------------------------- //
+
+export const logoutControllers = [
+  async function logout (req, resp) {
+    resp.clearCookie('access_token')
+    resp.status(200).send({ msg: 'Logout successfull' })
+  }
+]

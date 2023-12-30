@@ -1,6 +1,12 @@
 import { Schema } from 'mongoose'
 import bcrypt from 'bcrypt'
 
+function removePassFromUser (user) {
+  const userWithoutPass = { ...user }
+  delete userWithoutPass.password
+  return userWithoutPass
+}
+
 export const userSchema = new Schema({
   name: { type: String },
   email: { type: String, unique: true },
@@ -12,6 +18,10 @@ export const userSchema = new Schema({
     async comparePassword (candidatePassword) {
       const match = await bcrypt.compare(candidatePassword, this.password)
       return match
+    },
+    info () {
+      const user = removePassFromUser(this.toJSON())
+      return user
     }
   }
 })
